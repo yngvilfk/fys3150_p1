@@ -34,12 +34,7 @@ int main(int argv, char* argc[] )
 {
    int n;
    std::string fileName;
-   const bool run = Local::input(argv, argc, n, fileName);
-   if (!run)
-   {
-      std::cout << "Usage: Project1 <n> <fileName>" << std::endl;
-      return 1;
-   }
+   const bool runLU = Local::input(argv, argc, n, fileName);
 
    std::ofstream write(fileName.c_str());
 
@@ -110,53 +105,54 @@ int main(int argv, char* argc[] )
 
 
    //create matrix A
-   mat A(n,n);
-   A.fill(0);
-   A(0,0)=2.0;
-   A(n-1,n-1)=2.0;
-   A(0,1)= -1.0;
-   A(n-1,n-2) = -1;
-
-   for(int i=1; i<n-1 ;++i)
+   if (runLU) //only runs if n<=10000
    {
-      A(i,i) = 2.0;
-      A(i,i+1) = -1;
-      A(i,i-1) = -1;
-   }
+      mat A(n,n);
+      A.fill(0);
+      A(0,0)=2.0;
+      A(n-1,n-1)=2.0;
+      A(0,1)= -1.0;
+      A(n-1,n-2) = -1;
 
-   vec F
-         = f.subvec(1,n);        //make a new vector with right dimension
+      for(int i=1; i<n-1 ;++i)
+      {
+         A(i,i) = 2.0;
+         A(i,i+1) = -1;
+         A(i,i-1) = -1;
+      }
 
-   start = clock();   //start timer
+      vec F
+            = f.subvec(1,n);        //make a new vector with right dimension
+
+      start = clock();   //start timer
 
 
 
-   //LU-decomposition, solve Av=LUv=f
-   mat L, U, P;
-   lu(L, U, P, A);
+      //LU-decomposition, solve Av=LUv=f
+      mat L, U, P;
+      lu(L, U, P, A);
 
-     //testing the LU-decomposition
-    mat B = P.t()*L*U;
+        //testing the LU-decomposition
+       mat B = P.t()*L*U;
 
-   //    cout << B << endl;
+      //    cout << B << endl;
 
-   //solve Ly=f and Uu=y to find u:
-   vec y = solve(L, F);
-   vec uLU = solve(U, y);
-   finish = clock();       //stop timer
+      //solve Ly=f and Uu=y to find u:
+      vec y = solve(L, F);
+      vec uLU = solve(U, y);
+      finish = clock();       //stop timer
 
-   cout << "time LU-decomposition: " << static_cast<double>(finish - start)/static_cast<double>(CLOCKS_PER_SEC) << " s" << endl;
-
+      cout << "time LU-decomposition: " << static_cast<double>(finish - start)/static_cast<double>(CLOCKS_PER_SEC) << " s" << endl;
+    }
 
 
    // compute relative error
    arma::Col<double> epsilon(n+1);
    for (int i = 1; i <= n; ++i)
    {
-      epsilon(i) = log10(abs((v(i)-u(i))/u(i)));
-
+      epsilon(i) = log10(fabs((v(i)-u(i))/u(i)));
    }
-cout << "feil for n = " << n << ": " << epsilon.max() << endl;
+   cout << "log10(epsilon) for n = " << n << ": " << arma::min(epsilon) << endl;
    //reative error should be constant. This can be proved
 
 
@@ -176,8 +172,6 @@ Local::input(int         argv,
    {
       n = atoi(argc[1]);
       fileName.append(argc[2]);
-
-      return true;
    }
    else if (argv == 2)
    {
@@ -185,8 +179,6 @@ Local::input(int         argv,
       std::cin >> fileName;
       std::cout << std::endl;
       n = atoi(argc[1]);
-
-      return true;
    }
    else if (argv <= 1)
    {
@@ -197,11 +189,12 @@ Local::input(int         argv,
       std::cout << "filename: ";
       std::cin >> fileName;
       std::cout << std::endl;
-
-      return true;
    }
 
-   return false;
+   if (n <= 1000)
+      return true;
+   else
+      return false;
 }
 
 
